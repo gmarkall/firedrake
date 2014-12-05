@@ -27,13 +27,29 @@ import pytest
 from firedrake import *
 
 
-def poisson_mixed(size, parameters={}):
+def poisson_mixed(size, parameters={}, quadrilateral=False):
     # Create mesh
-    mesh = UnitSquareMesh(2 ** size, 2 ** size)
+    mesh = UnitSquareMesh(2 ** size, 2 ** size, quadrilateral=quadrilateral)
 
     # Define function spaces and mixed (product) space
-    BDM = FunctionSpace(mesh, "BDM", 1)
-    DG = FunctionSpace(mesh, "DG", 0)
+    if quadrilateral:
+        S0 = FiniteElement("CG", "interval", 1)
+        S1 = FiniteElement("DG", "interval", 0)
+
+        T0 = FiniteElement("CG", "interval", 1)
+        T1 = FiniteElement("DG", "interval", 0)
+
+        DG_elt = OuterProductElement(S1, T1)
+        BDM_elt_h = HDiv(OuterProductElement(S1, T0))
+        BDM_elt_v = HDiv(OuterProductElement(S0, T1))
+        BDM_elt = BDM_elt_h + BDM_elt_v
+
+        # spaces for calculation
+        DG = FunctionSpace(mesh, DG_elt)
+        BDM = FunctionSpace(mesh, BDM_elt)
+    else:
+        BDM = FunctionSpace(mesh, "BDM", 1)
+        DG = FunctionSpace(mesh, "DG", 0)
     W = BDM * DG
 
     # Define trial and test functions
@@ -61,6 +77,7 @@ def poisson_mixed(size, parameters={}):
     return sqrt(assemble(dot(u - f, u - f) * dx)), u, f
 
 
+@pytest.mark.parametrize('quadrilateral', [False, True])
 @pytest.mark.parametrize('parameters',
                          [{}, {'pc_type': 'fieldsplit',
                                'pc_fieldsplit_type': 'schur',
@@ -70,8 +87,8 @@ def poisson_mixed(size, parameters={}):
                                'fieldsplit_1_pc_factor_shift_type': 'INBLOCKS',
                                'fieldsplit_0_ksp_type': 'cg',
                                'fieldsplit_1_ksp_type': 'cg'}])
-def test_poisson_mixed(parameters):
-    assert poisson_mixed(3, parameters)[0] < 2e-5
+def test_poisson_mixed(parameters, quadrilateral):
+    assert poisson_mixed(3, parameters, quadrilateral=quadrilateral)[0] < 2e-5
 
 
 @pytest.mark.parallel(nprocs=3)
@@ -93,6 +110,12 @@ def test_poisson_mixed_parallel_fieldsplit():
 @pytest.mark.parallel(nprocs=3)
 def test_poisson_mixed_parallel():
     x = poisson_mixed(3)[0]
+    assert x < 2e-5
+
+
+@pytest.mark.parallel(nprocs=3)
+def test_poisson_mixed_parallel_on_quadrilaterals():
+    x = poisson_mixed(3, quadrilateral=True)[0]
     assert x < 2e-5
 
 
