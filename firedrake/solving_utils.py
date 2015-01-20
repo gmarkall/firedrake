@@ -36,24 +36,10 @@ def set_fieldsplits(mat, pc, names=None):
     if mat.sparsity.shape == (1, 1):
         return None
 
-    rows, cols = mat.sparsity.shape
     ises = []
-    nlocal_rows = 0
-    for i in range(rows):
-        if i < cols:
-            nlocal_rows += mat[i, i].sparsity.nrows * mat[i, i].dims[0]
-    offset = 0
-    if op2.MPI.comm.rank == 0:
-        op2.MPI.comm.exscan(nlocal_rows)
-    else:
-        offset = op2.MPI.comm.exscan(nlocal_rows)
-
-    for i in range(rows):
-        if i < cols:
-            nrows = mat[i, i].sparsity.nrows * mat[i, i].dims[0]
-            name = names[i] if names is not None else str(i)
-            ises.append((name, PETSc.IS().createStride(nrows, first=offset, step=1)))
-            offset += nrows
+    for i, iset in enumerate(mat.global_ises[0]):
+        name = names[i] if names is not None else str(i)
+        ises.append((name, iset))
 
     pc.setFieldSplitIS(*ises)
     return ises
