@@ -36,8 +36,7 @@ parameters.add(Parameters("assembly_cache",
 
 parameters.add(Parameters("coffee",
                           compiler=os.environ.get('PYOP2_BACKEND_COMPILER', 'gnu'),
-                          simd_isa=os.environ.get('PYOP2_SIMD_ISA', 'sse'),
-                          O2=True))
+                          simd_isa=os.environ.get('PYOP2_SIMD_ISA', 'sse')))
 
 ffc_parameters = default_parameters()
 ffc_parameters['write_file'] = False
