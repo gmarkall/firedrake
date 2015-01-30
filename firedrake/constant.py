@@ -60,6 +60,14 @@ class Constant(ufl.Coefficient):
         self._ufl_element = self.element()
         self._repr = 'Constant(%r)' % self._ufl_element
 
+    def reconstruct(self, value=None, domain=None):
+        """Reconstruct this :class:`Constant` with some slots replaced."""
+        if value is None:
+            value = self.dat.data
+        if domain is None:
+            domain = self.domain()
+        return Constant(value, domain)
+
     def ufl_element(self):
         """Return the UFL element on which this Constant is built."""
         return self._ufl_element

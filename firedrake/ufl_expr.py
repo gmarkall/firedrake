@@ -59,7 +59,8 @@ class Argument(ufl.argument.Argument):
             element = self._element
         if count is None or count == self._count:
             count = self._count
-        if count is self._count and element is self._element:
+        if count is self._count and element is self._element \
+           and function_space is self._function_space:
             return self
         ufl_assert(isinstance(element, FiniteElementBase),
                    "Expecting an element, not %s" % element)
