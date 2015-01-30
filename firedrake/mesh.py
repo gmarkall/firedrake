@@ -2,6 +2,7 @@ import numpy as np
 import os
 import FIAT
 import ufl
+import weakref
 
 from pyop2 import op2
 from pyop2.profiling import timed_function, timed_region, profile
@@ -352,6 +353,10 @@ class MeshBase(object):
                                   geometric_dimension=geometric_dim)
         self._ufl_domain = ufl.Domain(self.ufl_cell(), data=self)
         self._grown_halos = False
+
+        dm = PETSc.DMShell().create()
+        dm.setAttr('__mesh__', weakref.ref(self))
+        self.shell_dm = dm
 
         def callback(self):
             del self._callback
