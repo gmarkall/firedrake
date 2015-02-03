@@ -7,14 +7,16 @@ from ufl.algorithms.map_integrands import map_integrand_dags
 from ufl.algorithms.multifunction import MultiFunction
 
 from firedrake.ffc_interface import sum_integrands
+from firedrake import bcs
 from firedrake import constant
+from firedrake import expression
 from firedrake import function
 from firedrake import ufl_expr
 
 from . import utils
 
 
-__all__ = ["coarsen_form"]
+__all__ = ["coarsen_form", "coarsen_thing"]
 
 
 class CoarsenIntegrand(MultiFunction):
@@ -74,6 +76,8 @@ def coarsen_form(form):
 
     This maps over the form and replaces coefficients and arguments
     with their coarse mesh equivalents."""
+    if form is None:
+        return None
     assert isinstance(form, ufl.Form), \
         "Don't know how to coarsen %r" % type(form)
 
@@ -97,3 +101,38 @@ def coarsen_form(form):
 
         forms.append(integrand * measure)
     return reduce(add, forms)
+
+
+def coarsen_thing(thing):
+    if thing is None:
+        return None
+    if isinstance(thing, bcs.DirichletBC):
+        return coarsen_bc(thing)
+    hierarchy, level = utils.get_level(thing)
+    return hierarchy[level-1]
+
+
+def coarsen_bc(bc):
+    new_V = coarsen_thing(bc.function_space())
+    val = bc._original_val
+    zeroed = bc._currently_zeroed
+    subdomain = bc.sub_domain
+    method = bc.method
+
+    new_val = val
+
+    if isinstance(val, expression.Expression):
+        new_val = val
+
+    if isinstance(val, (constant.Constant, function.Function)):
+        mapper = CoarsenIntegrand()
+        new_val = map_integrand_dags(mapper, val)
+
+        
+    new_bc = bcs.DirichletBC(new_v, new_val, subdomain,
+                             method=method)
+
+    if zeroed:
+        new_bcs.homogenize()
+
+    return new_bc
