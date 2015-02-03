@@ -12,7 +12,7 @@ import projection
 import utils
 
 
-__all__ = ['DirichletBC']
+__all__ = ['DirichletBC', 'homogenize']
 
 
 class DirichletBC(object):
