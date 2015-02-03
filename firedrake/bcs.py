@@ -223,16 +223,16 @@ class DirichletBC(object):
         if not currently_zeroed:
             self.restore()
 
-def homogenize(bc):
-   """Create a homogeneous version of a :class:`.DirichletBC` object and return it. If
-   ``bc`` is a list or tuple containing one or more :class:`.DirichletBC` objects,
-   then return a list of the homogeneous versions of those :class:`.DirichletBC`s.
 
-   :arg bc: a :class:`.DirichletBC`, or list or tuple comprising :class:`.DirichletBC`(s).
-   """
-   if isinstance(bc, (list, tuple)):
-      bcs = bc
-      return [homogenize(bc) for bc in bcs]
-   V = bc.function_space()
-   homogenized_bc = DirichletBC(V, 0, bc.sub_domain)
-   return homogenized_bc
+def homogenize(bc):
+    """Create a homogeneous version of a :class:`.DirichletBC` object and return it. If
+    ``bc`` is a list or tuple containing one or more :class:`.DirichletBC` objects,
+    then return a list of the homogeneous versions of those :class:`.DirichletBC`s.
+
+    :arg bc: a :class:`.DirichletBC`, or list or tuple comprising :class:`.DirichletBC`(s).
+    """
+    if isinstance(bc, (list, tuple)):
+        return [homogenize(i) for i in bc]
+    V = bc.function_space()
+    homogenized_bc = DirichletBC(V, 0, bc.sub_domain)
+    return homogenized_bc
